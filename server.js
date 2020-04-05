@@ -12,6 +12,7 @@ const userCache = new Map();
 
 // app.use(cookieParser());
 const API_KEY = process.env.MAP_API_KEY;
+const MAP_SERVER_KEY = process.env.MAP_SERVER_KEY;
 app.use(cors());
 
 app.use(bodyParser.json())
@@ -24,7 +25,7 @@ app.post('/api-key', (req, res) => {
 app.get('/search', (req, res) => {
     console.log('/search invoked');
     const place = req.query.place;
-    const url = utils.mapPlaceSearchUrl(place, API_KEY);
+    const url = utils.mapPlaceSearchUrl(place, MAP_SERVER_KEY);
     axios.get(url).then((response) => {
         const results =  response.data.predictions.map((place) => ({description:place.description, placeId : place.place_id}))
         res.send(results);
@@ -34,7 +35,7 @@ app.get('/search', (req, res) => {
 
 app.get('/place/:placeId', (req,res)=> {
     const placeId = req.params.placeId;
-    const url = utils.placeByPlaceIdUrl(placeId, API_KEY);
+    const url = utils.placeByPlaceIdUrl(placeId, MAP_SERVER_KEY);
     axios.get(url).then((response) => {
         res.send({placeId: response.data.result.place_id, 
             formattedAddress:response.data.result.formatted_address,
