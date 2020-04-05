@@ -11,15 +11,21 @@ const uuid = require('uuid');
 const userCache = new Map();
 
 // app.use(cookieParser());
+const API_KEY = process.env.MAP_API_KEY;
 app.use(cors());
+
 app.use(bodyParser.json())
+
+
+app.post('/api-key', (req, res) => {
+    res.send(API_KEY);
+});
 
 app.get('/search', (req, res) => {
     console.log('/search invoked');
     const place = req.query.place;
-    const url = utils.mapPlaceSearchUrl(place)
+    const url = utils.mapPlaceSearchUrl(place, API_KEY);
     axios.get(url).then((response) => {
-        console.log(response.data.predictions);
         const results =  response.data.predictions.map((place) => ({description:place.description, placeId : place.place_id}))
         res.send(results);
     });
@@ -28,12 +34,12 @@ app.get('/search', (req, res) => {
 
 app.get('/place/:placeId', (req,res)=> {
     const placeId = req.params.placeId;
-    const url = utils.placeByPlaceIdUrl(placeId);
-    console.log('/place/:placeId invoked', placeId);
+    const url = utils.placeByPlaceIdUrl(placeId, API_KEY);
     axios.get(url).then((response) => {
         res.send({placeId: response.data.result.place_id, 
             formattedAddress:response.data.result.formatted_address,
-            location: response.data.result.geometry.location
+            location: response.data.result.geometry.location,
+            name: response.data.result.name
         });
     });
 })
@@ -54,7 +60,6 @@ app.post('/auth/code', (req, res) => {
             const userDetailUrl = `${process.env.USER_DETAIL_URL}?access_token=${accessToken}`;
             axios.get(userDetailUrl).then(userDetailResp => {
                 const user = userDetailResp.data;
-                console.log('/auth/code invoked', user);
                 const sessionId = uuid.v4();
                 userCache.set(sessionId, user);
                 res.send({"sessionId": sessionId});
@@ -76,8 +81,7 @@ app.post('/auth/code', (req, res) => {
 
 app.post('/user', (req, res) => {
     const userSession = req.body.userSession;
-    console.log('user session', userSession);
-    console.log('/user invoked', userCache.get(userSession))
+    console.log('/user invoked');
     let user = {};
     if(userSession && userCache.get(userSession)) {
         user = {
